@@ -1,120 +1,96 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useReducer, useState } from "react"
+import notesReducer from "./notesReducer"
+import { initialState } from "./initialState"
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [state, dispatch] = useReducer(notesReducer, initialState);
+  const [title, settitle] = useState('');
+  
+  // ✅ ye 2 new states add karo
+  const [editingId, setEditingId] = useState(null);   // kaun si note edit ho rahi hai
+  const [editTitle, setEditTitle] = useState('');      // edit input ki value
+
+  function handleAddNotes(title) {
+    if (!title.trim()) return;   // ✅ empty check
+    dispatch({
+      type: 'Add Note',
+      payload: { title, content: '' }
+    })
+    settitle('');
+  }
+
+  function handlePin(id) {
+    dispatch({
+      type: 'Pin Note',
+      payload: { id }
+    })
+  }
+
+  function handleDelete(id) {
+    dispatch({
+      type: 'Delete Note',
+      payload: { id }
+    })
+  }
+
+  // ✅ Edit button dabane par — editing mode ON karo
+  function handleEditStart(note) {
+    setEditingId(note.id);          // is note ki editing shuru
+    setEditTitle(note.title);       // purana title input mein daal do
+  }
+
+  // ✅ Save button dabane par — actually update karo
+  function handleUpdate(id) {
+    if (!editTitle.trim()) return;  // empty check
+    dispatch({
+      type: 'Update Note',
+      payload: {
+        id,
+        changes: { title: editTitle }
+      }
+    });
+    setEditingId(null);    // editing mode OFF
+    setEditTitle('');
+  }
 
   return (
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      <h1>My notes App ({state.notes.length})</h1>
+      <input 
+        type="text" 
+        placeholder="Title" 
+        value={title} 
+        onChange={(e) => settitle(e.target.value)} 
+      />
+      <button onClick={() => handleAddNotes(title)}>Add Note</button>
 
-      <div className="ticks"></div>
+      {state.notes.map(note => (
+        <div key={note.id}>
+          
+          {/* ✅ agar ye note edit ho rahi hai to input dikhao */}
+          {editingId === note.id ? (
+            <>
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+              />
+              <button onClick={() => handleUpdate(note.id)}>Save</button>
+              <button onClick={() => setEditingId(null)}>Cancel</button>
+            </>
+          ) : (
+            <>
+              <h3>{note.title}</h3>
+              <button onClick={() => handlePin(note.id)}>
+                {note.pinned ? 'Unpin' : 'Pin'}
+              </button>
+              <button onClick={() => handleDelete(note.id)}>Delete</button>
+              <button onClick={() => handleEditStart(note)}>Edit</button>
+            </>
+          )}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
+      ))}
     </>
   )
 }
